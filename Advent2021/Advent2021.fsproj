@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Puzzel1a.fs" />
+    <Compile Include="Puzzel1b.fs" />
+    <Compile Include="Puzzel2a.fs" />
+    <Compile Include="Puzzel2b.fs" />
+    <Compile Include="Puzzel3a.fs" />
+    <Compile Include="Puzzel3b.fs" />
+    <Compile Include="Puzzel4a.fs" />
+    <Compile Include="Puzzel4b.fs" />
+    <Compile Include="Puzzel5a.fs" />
+    <Compile Include="Puzzel5b.fs" />
+
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="fparsec" Version="1.1.1" />
+  </ItemGroup>
+</Project>
