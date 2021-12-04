@@ -2,12 +2,7 @@ module Puzzel2a
 
 open System.IO
 open FParsec
-
-let unwrapParserResult (r : ParserResult<'a, 'b>) =
-    match r with
-    | Success (result, state, pos) -> result
-    | Failure (s ,parserError , userState) ->
-        failwith (s) 
+open Advent2021.Helpers
 
 type SubMovement =
 | Forward of int

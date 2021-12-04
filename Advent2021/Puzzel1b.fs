@@ -9,7 +9,7 @@ let solve () =
         |> Seq.map int
         |> Seq.windowed 3
         |> Seq.map (fun xs -> xs |> Seq.sum)
-        |> Seq.windowed 2
-        |> Seq.map (fun xs -> if xs.[1] > xs.[0] then 1 else 0)
-        |> Seq.sum
+        |> Seq.pairwise
+        |> Seq.filter (fun (a, b) -> a > b)
+        |> Seq.length
     printfn $"{result}"

@@ -8,7 +8,7 @@ let solve () =
         input
         |> Seq.map int
         |> Seq.windowed 2
-        |> Seq.map (fun xs -> if xs.[1] > xs.[0] then 1 else 0)
-        |> Seq.sum
+        |> Seq.filter (fun xs -> xs.[1] > xs.[0])
+        |> Seq.length
     printfn $"{result}"
     

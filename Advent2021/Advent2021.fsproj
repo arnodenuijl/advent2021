@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Helpers.fs" />
     <Compile Include="Puzzel1a.fs" />
     <Compile Include="Puzzel1b.fs" />
     <Compile Include="Puzzel2a.fs" />
