@@ -15,10 +15,13 @@
     <Compile Include="Puzzel4b.fs" />
     <Compile Include="Puzzel5a.fs" />
     <Compile Include="Puzzel5b.fs" />
+    <Compile Include="Puzzel6a.fs" />
+    <Compile Include="Puzzel6b.fs" />
 
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="fparsec" Version="1.1.1" />
+    <PackageReference Include="FSharp.Collections.ParallelSeq" Version="1.2.0" />
   </ItemGroup>
 </Project>
