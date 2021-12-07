@@ -17,6 +17,8 @@
     <Compile Include="Puzzel5b.fs" />
     <Compile Include="Puzzel6a.fs" />
     <Compile Include="Puzzel6b.fs" />
+    <Compile Include="Puzzel7a.fs" />
+    <Compile Include="Puzzel7b.fs" />
 
     <Compile Include="Program.fs" />
   </ItemGroup>
