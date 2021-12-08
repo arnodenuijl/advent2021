@@ -33,12 +33,12 @@ let solve () =
     
     let gamma =
         gammaDigits
-        |> arrayToString
+        |> seqToString
         |> binaryStringToInt
         
     let epsilon =
         epsilonDigits
-        |> arrayToString
+        |> seqToString
         |> binaryStringToInt
         
     let result = gamma * epsilon
