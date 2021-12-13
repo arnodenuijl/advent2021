@@ -5,80 +5,81 @@ open System.IO
 open FParsec
 open Advent2021.Helpers
 
-let inputText = "start-A
-start-b
-A-c
-A-b
-b-d
-A-end
-b-end"
+type Fold =
+| X of int32
+| Y of int32
 
-type CaveType =
-| Big of string
-| Small of string
+module Parser =
+    let dotParser = pint32 .>> (pchar ',') .>>. pint32
+    let dotsParser = sepEndBy dotParser newline 
+    let foldParser =
+            choice [
+                pstring "x=" >>. pint32 |>> X
+                pstring "y=" >>. pint32 |>> Y
+            ]
+    let foldlineParser = pstring "fold along " >>. foldParser
+    let foldlinesParser = sepBy foldlineParser newline
     
+    let inputParser = dotsParser .>> newline .>>. foldlinesParser
+    
+let printPaper paper =
+    let boolToChar b = if b then "#" else "."
+    for y in [0..(Array2D.length2 paper) - 1] do
+        printfn ""
+        for x in [0..(Array2D.length1 paper) - 1] do
+            printf $"{boolToChar <| paper[x,y]}"
+    printfn ""
+
 let solve () =
-    let inputText = File.ReadAllText "12a.txt"
+    let inputText = File.ReadAllText "13a.txt"
+    let dots, folds = run Parser.inputParser inputText |> unwrapParserResult
+    printfn $"{List.length dots} dots and {List.length folds} folds"
     
-    let bigCaveParser = many1Chars asciiUpper |>> Big
-    let smallCaveParser = many1Chars asciiLower |>> Small
-    let caveParser = choice [bigCaveParser;smallCaveParser]
-    let lineParser = sepEndBy caveParser (pchar '-')
-    let inputParser = sepEndBy lineParser newline
-    
-    let input =
-        run inputParser inputText |> unwrapParserResult
-        |> List.map (fun parts -> (parts[0], parts[1]))
-    
-    let nodes =
-        let ab =
-            input
-            |> List.groupBy fst
-            |> List.map (fun (key, items) -> (key, List.map snd items))
-        let ba =
-            input
-            |> List.groupBy snd
-            |> List.map (fun (key, items) -> (key, List.map fst items))
-        
-        ab @ ba // omdat een cave in beide lijsten kan zitten moeten de bestemmingen van beide gecombineerd worden
-        |> List.groupBy fst
-        |> List.map (fun (key, lists) ->
-            let destinations =
-                lists
-                |> List.map snd
-                |> List.collect id                
-            (key, destinations))
-        |> Map.ofList            
+    let maxX, maxY = 
+        dots
+        |> Seq.fold
+            (fun (maxX, maxY) (x,y) -> (Math.Max(maxX, x), Math.Max(maxY, y)))
+            (0,0)
             
-    for node in nodes do
-        printfn $"{node.Key} - {node.Value}"
-       
-    let startNode = Small "start"
-    let endNode = Small "end"
+    printfn $"{maxX} :: {maxY}"    
+    let paper = Array2D.create (maxX + 1) (maxY + 1) false
+    dots
+    |> Seq.iter (fun (x, y) -> paper[x,y] <- true)
     
-    let rec findAllPaths (visitedNodes : CaveType list) (node: CaveType) =
-//        let visitedString = String.Join(",", visitedNodes)
+    let foldPaper (fold : Fold) (paper: bool[,]) =
+        let currentWidth = (Array2D.length1 paper)      
+        let currentHeight = (Array2D.length2 paper)      
+        let newWidth, newHeight =
+            match fold with
+            | X x -> Math.Max(x, currentWidth - x - 1), currentHeight
+            | Y y -> currentWidth, Math.Max(y, currentHeight - y - 1)
         
-//        printfn $"findAllPaths {visitedString} {node}"
+        let newPos currentX currentY =
+            let result =
+                match fold with
+                | Y y -> currentX, newHeight - Math.Abs(y - currentY)
+                | X x -> newWidth - Math.Abs(x - currentX), currentY
+            result
+
+        let newPaper = Array2D.create newWidth newHeight false
+        printfn $"Created new paper with size {newWidth} {newHeight}"
+            
+        for y in [0..currentHeight - 1] do
+            for x in [0..currentWidth - 1] do
+                match fold with
+                | X foldX when x = foldX -> ()
+                | Y foldY when y = foldY -> ()
+                | _ ->
+                    let newX, newY = newPos x y                    
+                    let oldPaperValue = paper[x,y]
+                    let newPaperValue = newPaper[newX,newY] || oldPaperValue
+                    Array2D.set newPaper newX newY newPaperValue
+        newPaper
         
-        let pathUntilNow = visitedNodes @ [node]
+    folds
+    |> Seq.fold
+           (fun state fold -> foldPaper fold state)
+           paper
+    |> printPaper
     
-        if node = endNode
-        then [pathUntilNow]
-        else 
-            let possibleNextNodes = Map.find node nodes
-            possibleNextNodes
-            |> List.collect (fun c ->
-                match c with
-                | Big _ -> findAllPaths pathUntilNow c
-                | Small _ -> if List.contains c pathUntilNow then [pathUntilNow] else findAllPaths pathUntilNow c)
-            
-            
-    
-    let allPathsFromStart =
-        findAllPaths [] startNode
-        |> List.filter (fun p -> List.last p = endNode)
-        |> List.length
-    printfn $"{allPathsFromStart}"
-    ()
     

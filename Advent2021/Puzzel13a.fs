@@ -31,10 +31,7 @@ type Fold =
 | X of int32
 | Y of int32
 
-
-let solve () =
-//    let inputText = File.ReadAllText "13a.txt"
-    
+module Parser =
     let dotParser = pint32 .>> (pchar ',') .>>. pint32
     let dotsParser = sepEndBy dotParser newline 
     let foldParser =
@@ -47,60 +44,78 @@ let solve () =
     
     let inputParser = dotsParser .>> newline .>>. foldlinesParser
     
-    let dots, folds = run inputParser inputText |> unwrapParserResult
+let printPaper paper =
+    let boolToChar b = if b then "#" else "."
+    for y in [0..(Array2D.length2 paper) - 1] do
+        printfn ""
+        for x in [0..(Array2D.length1 paper) - 1] do
+            printf $"{boolToChar <| paper[x,y]}"
+    printfn ""
+
+
+
+let solve () =
+    let inputText = File.ReadAllText "13a.txt"
+    let dots, folds = run Parser.inputParser inputText |> unwrapParserResult
     printfn $"{List.length dots} dots and {List.length folds} folds"
     
-    let maxX = dots |> Seq.map fst |> Seq.max
-    let maxY = dots |> Seq.map snd |> Seq.max
-
+    let maxX, maxY = 
+        dots
+        |> Seq.fold
+            (fun (maxX, maxY) (x,y) -> (Math.Max(maxX, x), Math.Max(maxY, y)))
+            (0,0)
+            
     printfn $"{maxX} :: {maxY}"    
     let paper = Array2D.create (maxX + 1) (maxY + 1) false
     dots
     |> Seq.iter (fun (x, y) -> paper[x,y] <- true)
     
-    
-    let foldAlongX (foldPosY: int32) (paper: bool[,]) =
-        let currentHeight = (Array2D.length2 paper)      
+//    printPaper paper
+
+    let foldPaper (fold : Fold) (paper: bool[,]) =
         let currentWidth = (Array2D.length1 paper)      
-        let newHeight = Math.Max(foldPosY, currentHeight - foldPosY) 
-        let newPaper = Array2D.create (Array2D.length1 paper) newHeight false
+        let currentHeight = (Array2D.length2 paper)      
+        let newWidth, newHeight =
+            match fold with
+            | X x -> Math.Max(x, currentWidth - x - 1), currentHeight
+            | Y y -> currentWidth, Math.Max(y, currentHeight - y - 1)
+
+        let newPaper = Array2D.create newWidth newHeight false
+        
         printfn $"Created new paper with size {Array2D.length1 newPaper} {Array2D.length2 newPaper}"
 
-        let newYPos y =
-            let newY =
-                if y < foldPosY
-                then newHeight - (foldPosY - y)  // 7 - 8 + 1       8 - 9 + 1
-                else newHeight - (y - foldPosY + 1)
-            printfn $"Y: {y} -> {newY}"
-            newY
+        let newPos currentX currentY =
+            let result =
+                match fold with
+                | Y y -> currentX, newHeight - Math.Abs(y - currentY)
+                | X x -> newWidth - Math.Abs(x - currentX), currentY
+            result
             
-        for x in [0..currentWidth - 1] do
-            for y in [0..currentHeight - 1] do
-                if y <> foldPosY then
-                    let newY = newYPos y                    
-                    let oldPaperValue = paper.[x,y]
-                    let newPaperValue = paper.[x,newY] || oldPaperValue
-                    printfn $"Set ({x},{newY}) to {newPaperValue}"
-                    Array2D.set newPaper x newY newPaperValue
+        for y in [0..currentHeight - 1] do
+            for x in [0..currentWidth - 1] do
+                match fold with
+                | X foldX when x = foldX -> ()
+                | Y foldY when y = foldY -> ()
+                | _ ->
+                    let newX, newY = newPos x y                    
+                    let oldPaperValue = paper[x,y]
+                    let newPaperValue = newPaper[newX,newY] || oldPaperValue
+                    Array2D.set newPaper newX newY newPaperValue
         newPaper
+    let countDots paper =
+        let width = (Array2D.length1 paper)      
+        let height = (Array2D.length2 paper)      
+        seq{
+            for y in [0..height - 1] do
+                for x in [0..width - 1] do
+                    if paper[x,y] then yield 1
+        }
+        |> Seq.sum
         
     let result =
         paper
-        |> foldAlongX 1
-
-    let boolToChar b = if b then "#" else "."
-    
-    
-    let printPaper paper =
-        for y in [0..(Array2D.length2 paper) - 1] do
-            printfn ""
-            for x in [0..(Array2D.length1 paper) - 1] do
-                printf $"{boolToChar <| paper[x,y]}"
-        printfn ""
-    
-    printPaper paper
-    printPaper result
-    
-
+        |> foldPaper (folds[0])
+        |> countDots
+    printfn $"{result}"
     ()
     
