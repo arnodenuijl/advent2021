@@ -34,7 +34,7 @@ module Parser =
 
 
 let solve () =
-    let inputText = File.ReadAllText "14a.txt"
+//    let inputText = File.ReadAllText "14a.txt"
     let template, insertions = run Parser.inputParser inputText |> unwrapParserResult       
     printfn $"{seqToString template} {List.length insertions}"
     
@@ -60,7 +60,11 @@ let solve () =
     let endState =
         [0..9]
         |> List.fold
-            (fun state _ -> takeStep state)
+            (fun state _ ->
+                let result = takeStep state
+                printfn $"{Seq.length result} {seqToString result}"
+                result
+                )
             template
             
     let min =

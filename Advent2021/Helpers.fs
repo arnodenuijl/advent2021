@@ -11,6 +11,15 @@ let binaryStringToInt (b: string) =
 
 let seqToString (xs: 'a seq) =
     String.Join("", xs)
+    
+// insert     
+let inline SetOrUpdate (key: 'a) (setIfNew : 'b) (update: 'b -> 'b) (map: Map<'a,'b>): Map<'a,'b> =
+    let v =
+        match Map.tryFind key map with
+        | Some v -> update v
+        | None -> setIfNew        
+    Map.add key v map
+    
 
 // Find an item in a list and return the rest of the list and the item
 // Must find 1 and only 1 item or an exception is thrown

@@ -33,63 +33,56 @@ module Parser =
     let insertionsParser: Parser<((char * char) * char) list,unit> = sepBy insertionParser newline
     let inputParser = templateParser .>> newline .>>. insertionsParser
 
+let getLetterCount (input: Map<Char * Char, int64>) =
+    input
+    |> Seq.map (fun kvp -> (snd kvp.Key, kvp.Value))
+    |> Seq.groupBy fst
+    |> Seq.map (fun (k, vs) -> (k, vs |> Seq.map snd |> Seq.sum))
 
 let solve () =
-//    let inputText = File.ReadAllText "14a.txt"
+    let inputText = File.ReadAllText "14a.txt"
+
     let template, insertions = run Parser.inputParser inputText |> unwrapParserResult       
-    printfn $"{seqToString template} {List.length insertions}"
+    printfn $"{seqToString template} & {List.length insertions} insertion"
     
     let replacements =
         insertions
         |> Map.ofList
     
-    let AddOrUpdate key valueToAdd map =
-        let v = Map.tryFind key map |> Option.defaultValue 0L
-        Map.add key (v + valueToAdd) map
-        
+    // de input paarsgewijs. Een - er voor om een paar te vormen met de eerste Char
+    // Aan het eind tellen we alleen de tweede letter van de key (-,N) is dus een N en (B,N) is een N        
     let startState: Map<Char * Char,int64> =
         '-' :: template
         |> List.pairwise
         |> List.fold
                 (fun (countPerChar: Map<Char * Char, int64>) (char: Char * Char) ->
                         countPerChar
-                        |> AddOrUpdate char 1L)                
+                        |> SetOrUpdate char 1L ((+) 1L))                
                 Map.empty<Char * Char, int64>
-
+                
     let takeStep (line: Map<Char * Char, int64>) =
         line
-        |> Map.fold
-            (fun state key value ->
-                match Map.tryFind key replacements with
-                | Some r ->
-                    let newKey1 = (fst key, r)
-                    let newKey2 = (r, snd key)
-                    state
-                    |> AddOrUpdate newKey1 value 
-                    |> AddOrUpdate newKey2 value 
-                | None -> state                
+        |> Seq.collect // collect all new pairs. Collect because we can return more than 1 output per input 
+            (fun kvp ->
+                match Map.tryFind kvp.Key replacements with
+                | Some r -> // if we have a replacement we return the two new pairs. That have the same count as the original pair
+                    let newKey1 = (fst kvp.Key, r)
+                    let newKey2 = (r, snd kvp.Key)
+                    [
+                        (newKey1, kvp.Value) 
+                        (newKey2, kvp.Value)
+                    ]
+                | None -> // if there is no replacement, we return the original 
+                    [(kvp.Key,kvp.Value)]
             )
-            line 
-    
-    let getLetterCount (input: Map<Char * Char, int64>) =
-        input
-        |> Seq.map (fun kvp -> (snd kvp.Key, kvp.Value))
-    
-    printfn ""
-    startState
-    |> Map.iter (fun k v -> printfn $"{k} {v}")
-
+        |> Seq.fold
+               (fun state (key, value) -> SetOrUpdate key value ((+) value) state)
+               Map.empty<Char * Char, int64>
+        
     let endState =
-        [0..9]
+        [0..39]
         |> List.fold
-            (fun state _ ->
-                let result = takeStep state
-                printfn ""
-                result
-                |> Map.iter (fun k v -> printfn $"{k} {v}")
-                result
-                )
-                
+            (fun state _ -> takeStep state)                
             startState            
         |> getLetterCount
 
@@ -107,15 +100,3 @@ let solve () =
         
     printfn $"{max} - {min} = {result}"
     ()
-
-    // 2 = 1
-    // 3 = 2
-    // 4 = 3
-    // 5 = 4
-    // 6 = 5
-    //
-    // 123456
-    
-    // NBCCNBBBCBHCB                      -> 13 
-    // NB BC CC CN NB BB BB BC CB BH HC CB = 12
-    
