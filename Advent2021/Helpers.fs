@@ -9,6 +9,9 @@ let charToInt (ch: char)  =
 let binaryStringToInt (b: string) =
     Convert.ToInt32(b, 2)
 
+let binaryStringToLong (b: string) =
+    Convert.ToInt64(b, 2)
+
 let seqToString (xs: 'a seq) =
     String.Join("", xs)
     
@@ -41,5 +44,11 @@ let findSingleWithRest (f : 'a -> bool) (xs : 'a list) : 'a list * 'a =
 let unwrapParserResult (r : ParserResult<'a, 'b>) =
     match r with
     | Success (result, state, pos) -> result
+    | Failure (s ,parserError , userState) ->
+        failwith (s) 
+
+let unwrapParserResultWithRemaining (r : ParserResult<'a, 'b>) =
+    match r with
+    | Success (result, state, pos) -> result, state, pos
     | Failure (s ,parserError , userState) ->
         failwith (s) 

@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Helpers.fs" />
+    <Compile Include="BITS.fs" />
     <Compile Include="Puzzel1a.fs" />
     <Compile Include="Puzzel1b.fs" />
     <Compile Include="Puzzel2a.fs" />
@@ -35,6 +36,8 @@
     <Compile Include="Puzzel14b.fs" />
     <Compile Include="Puzzel15a.fs" />
     <Compile Include="Puzzel15b.fs" />
+    <Compile Include="Puzzel16a.fs" />
+    <Compile Include="Puzzel16b.fs" />
 
     <Compile Include="Program.fs" />
   </ItemGroup>
