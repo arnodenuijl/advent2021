@@ -38,5 +38,7 @@ let main args =
     | [|"15b"|] -> Puzzel15b.solve ()
     | [|"16a"|] -> Puzzel16a.solve ()
     | [|"16b"|] -> Puzzel16b.solve ()
+    | [|"17a"|] -> Puzzel17a.solve ()
+    | [|"17b"|] -> Puzzel17b.solve ()
     | _ -> Console.WriteLine "niets te doen"
     0
