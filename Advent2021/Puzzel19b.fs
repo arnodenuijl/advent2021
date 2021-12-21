@@ -1,5 +1,6 @@
-﻿module Puzzel19a
+﻿module Puzzel19b
 
+open System
 open System.Collections.Immutable
 open System.IO
 open MathNet.Numerics.LinearAlgebra.Double
@@ -7,6 +8,7 @@ open Microsoft.FSharp.Core
 open FParsec
 open Advent2021.Helpers
 open MathNet.Numerics.LinearAlgebra
+open Puzzel19a
 
 type Scanner = {
     Name: string
@@ -107,23 +109,28 @@ let solve () =
         |> List.sortByDescending (fun (_, count) -> count)
         |> List.head
             
-    let movePoints (vector: Vector<float>) (m: Matrix<float>) : Matrix<float>=
-        m.MapIndexed(fun x y f -> f + vector[y])
+    let movePoints (vector: Vector<float>) (s: Scanner) : Scanner=
+        { s with Points = s.Points.MapIndexed(fun x y f -> f + vector[y]) } 
     
-    let findMatchingRotation (s0: Scanner) (s1: Scanner): Scanner option =
-        allRotations
-        |> Seq.collect (fun rotation ->
+    let findMatchingRotation (s0: Scanner) (s1: Scanner): (Scanner * Rotation * Displacement) option =
+        let possibleRotations =
+            allRotations
+            |> List.collect (fun rotation ->
                             let rotatedMatrix = rotate rotation s1
                             let displacement, pointsInline = calculatePointsInLine s0.Points rotatedMatrix.Points
-                            printfn $"S1: {s0.Name} S2: {s1.Name} pointsInline: {pointsInline}"
                             if pointsInline >= 12 then
                                 [
-                                    { rotatedMatrix with Points = movePoints displacement rotatedMatrix.Points }
+                                    s1, rotation, displacement
                                 ]
                             else []
                         )
-        |> Seq.tryHead
-               
+        if List.length possibleRotations > 1 then
+            failwith $"Expected 1 possible rotation. Maar is {List.length possibleRotations}"
+        else if List.length possibleRotations = 1 then
+            Some possibleRotations[0]
+        else
+            None
+            
     let deduplicate (m:Matrix<float>) : Matrix<float>=
         m.EnumerateRows()
         |> Seq.fold
@@ -132,7 +139,7 @@ let solve () =
         |> matrix
 
     let rec findMatches (sourceScanner:Scanner) (scannersToMatch:Scanner list) =
-        let mutable matched = [sourceScanner]
+        let mutable matched = [(sourceScanner, [], [0.0;0.0;0.0] |> vector)]
         let mutable toMatch = scannersToMatch
         
         while toMatch <> [] do
@@ -142,10 +149,15 @@ let solve () =
                 let mutable found = false
                 for sourceScanner in matched do
                     if not found then
-                        match findMatchingRotation sourceScanner scannerToMatch with
-                        | Some s ->
-                            printfn $"Matched {s.Name}"
-                            matched <- s :: matched
+                        let scan, rot, disp = sourceScanner
+                        let adjustedScanner =
+                            scan
+                            |> rotate rot
+                            
+                        match findMatchingRotation adjustedScanner scannerToMatch with
+                        | Some (s: Scanner, r: Rotation, d: Displacement) ->
+                            printfn $"Matched {s.Name}"                             
+                            matched <- (s,r,d.Add(disp)) :: matched
                             toMatch <- List.filter (fun s -> s <> scannerToMatch) toMatch
                             found <- true
                         | None -> ()
@@ -154,21 +166,31 @@ let solve () =
             
     let inputText = File.ReadAllText "19a.txt"
     let scanners = run Parser.scannersParser inputText |> unwrapParserResult
+        
+    let scanner0 = List.find (fun s -> s.Name = "0") scanners
+    let rest = List.filter (fun s -> s.Name <> "0") scanners
+        
+    let scannersWithDisplacement =
+        findMatches scanner0 rest
+        |> List.ofSeq
     
-    printfn $"{List.length scanners} scanners"
-    for s in scanners do
-        printfn $"{s.Name} : {s.Points.RowCount} rows" 
-    
-    let scanner0 = List.find (fun s -> s.Name = "10") scanners
-    let rest = List.filter (fun s -> s.Name <> "10") scanners
-    let matches = findMatches scanner0 rest
-    
-    let merged =
-        matches
-        |> Seq.collect (fun m -> m.Points.EnumerateRows())
-        |> matrix
-        |> deduplicate
-    
-    printfn  $"{merged.RowCount}"
+    let manhattenDistance (l1: Vector<float>) (l2: Vector<float>) =
+        Math.Abs(l1[0] - l2[0]) +
+        Math.Abs(l1[1] - l2[1]) +
+        Math.Abs(l1[2] - l2[2])
+        
+    let result =
+        seq {
+            for s1 in scannersWithDisplacement do
+                for s2 in scannersWithDisplacement do
+                    let s1,rot1,dist1 = s1
+                    let s2,rot2,dist2 = s2
+                    let d = manhattenDistance dist1 dist2
+                    printfn  $"{s1.Name} ({dist1[0]},{dist1[1]},{dist1[2]}) to {s2.Name} ({dist2[0]},{dist2[1]},{dist2[2]}) = {d}"
+                    d
+        }
+        
+        |> Seq.max
+    printfn $"{result} = 10569"    
     ()
     
